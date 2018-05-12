@@ -13,7 +13,7 @@ public final class FpServiceBySuper implements FpService {
     private final FpDB fpDB;
 
     @Autowired
-    public FpServiceBySuper(final FpDB fpDB) {
-        this.fpDB = fpDB;
+    public FpServiceBySuper(final FpDB fpDBBySuper) {
+        this.fpDB = fpDBBySuper;
     }
 }
