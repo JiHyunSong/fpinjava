@@ -9,11 +9,16 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public interface FpService {
+public interface FpService extends Service<FpModel, FpModelQuery>{
     FpDB getFpDB();
 
     default List<FpModel> findAllModelBySomeCond(final Predicate<FpModel> f) {
         return getFpDB().findAll().stream().filter(f).collect(Collectors.toList());
+    }
+
+    @Override
+    default List<FpModel> findAll() {
+        return getFpDB().findAll();
     }
 
     default Boolean validate(final FpModel model) {

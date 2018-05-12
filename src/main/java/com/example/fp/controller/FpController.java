@@ -6,6 +6,7 @@ import com.example.fp.model.FpModelQuery;
 import com.example.fp.service.FpService;
 import com.example.fp.service.FpServiceByRole;
 import com.example.fp.service.FpServiceBySuper;
+import com.example.fp.service.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -13,8 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/test")
-public class FpController {
+@RequestMapping("/api/v1/fp")
+public class FpController implements Controller<FpModel, FpModelQuery> {
     private final FpService fpServiceByRole;
     private final FpService fpServiceBySuper;
 
@@ -26,21 +27,9 @@ public class FpController {
         this.fpServiceBySuper = fpServiceBySuper;
     }
 
-    private FpService fpService(final FpAuthority fpAuthority) {
+    @Override
+    public FpService getService(final FpAuthority fpAuthority) {
         return fpAuthority.isSuper() ? fpServiceBySuper : fpServiceByRole;
     }
 
-    @RequestMapping("")
-    public <T> ResponseEntity<T> getAll(final FpAuthority fpAuthority) {
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-    }
-
-    @PutMapping("")
-    public ResponseEntity<FpModel> upsert(
-            @RequestBody final FpModel model,
-            @RequestParam final FpModelQuery query,
-            final FpAuthority fpAuthority) {
-        final FpModel upserted = fpService(fpAuthority).upsert(model, query, fpAuthority);
-        return new ResponseEntity<>(upserted, HttpStatus.OK);
-    }
 }
