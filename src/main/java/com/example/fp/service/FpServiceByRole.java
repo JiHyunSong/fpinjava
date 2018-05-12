@@ -4,6 +4,7 @@ import com.example.fp.db.FpDB;
 import com.example.fp.model.FpAuthority;
 import com.example.fp.model.FpModel;
 import com.example.fp.model.FpModelQuery;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,14 +28,14 @@ public final class FpServiceByRole implements FpService {
     }
 
     @Override
-    public FpModel upsert(final FpModel model,
+    public Optional<FpModel> upsert(final FpModel model,
                           final FpModelQuery query,
                           final FpAuthority authority) {
         if (isValidQuery(query, authority)) {
             return FpService.super.upsert(model, query, authority);
         } else {
             log.error("Invalid request by user");
-            return null;
+            return Optional.empty();
         }
     }
 }

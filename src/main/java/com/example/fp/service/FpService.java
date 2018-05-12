@@ -40,5 +40,6 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
         };
 
         return validate(query).flatMap(aux);
+
     }
 }
