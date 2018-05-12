@@ -11,17 +11,53 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.function.Function;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 
 public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
+
     @Override
     default Adapter<responseM> adapter() {
         return responseM.INSTANCE.adapter();
     }
 
+    default ResponseEntity<T> toResponseEntity() {
+        if (this instanceof ResponseSuccess) {
+            return ((ResponseSuccess<T>) this).toResponsibleEntity();
+        } else if (this instanceof ResponseFailure) {
+            return ((ResponseFailure<T>) this).toResponsibleEntity();
+        } else {
+            // unreachable code
+            return new ResponseFailure<T>(HttpStatus.INTERNAL_SERVER_ERROR, "").toResponsibleEntity()
+        }
+    }
+
+    static <U> ResponseM<U> of(final U value) {
+        return value != null
+            ? new ResponseSuccess<>(value)
+            : new ResponseFailure<>(HttpStatus.BAD_REQUEST, "");
+    }
+
+    static <U> ResponseM<U> of(final U value, final HttpStatus status, final String message) {
+        return value != null
+            ? new ResponseSuccess<>(value)
+            : new ResponseFailure<>(status, message);
+    }
+
+    static <U> ResponseM<U> failure() {
+        return new ResponseFailure<>(HttpStatus.BAD_REQUEST, "");
+    }
+
+    static <U> ResponseM<U> failure(final HttpStatus status, final String message) {
+        return new ResponseFailure<>(status, message);
+    }
+
     @Slf4j
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     final class ResponseSuccess<T> implements ResponseM<T> {
+
         private final T data;
 
         @Override
@@ -55,13 +91,18 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
         }
 
         @Override
-        public <R> Monadic<Witness.responseM, R> flatMap(Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
+        public <R> Monadic<Witness.responseM, R> flatMap(
+            Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
             try {
                 return Monadic.cast(f.apply(data))
             } catch (Exception e) {
                 return new ResponseFailure<>(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to execute flatMap function");
             }
+        }
+
+        public ResponseEntity<T> toResponsibleEntity () {
+            return new ResponseEntity<>(data, HttpStatus.OK);
         }
     }
 
@@ -71,6 +112,7 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
 
         private final HttpStatus status;
         private final String message;
+
         @Override
         public T get() {
             throw new NoSuchElementException();
@@ -89,12 +131,20 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
 
         @Override
         public <R> Monadic<Witness.responseM, R> map(Function<? super T, ? extends R> f) {
-            return null;
+            return new ResponseFailure<>(status, message);
         }
 
         @Override
-        public <R> Monadic<Witness.responseM, R> flatMap(Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
-            return null;
+        public <R> Monadic<Witness.responseM, R> flatMap(
+            Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
+            return new ResponseFailure<>(status, message);
+        }
+
+        private final String MESSAGE_HEADER = "FP-Message";
+        public ResponseEntity<T> toResponsibleEntity () {
+            final MultiValueMap<String, String> headers = new HttpHeaders();
+            headers.add(MESSAGE_HEADER, message);
+            return new ResponseEntity<>(headers, HttpStatus.OK);
         }
     }
 }
