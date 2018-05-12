@@ -5,11 +5,16 @@ import com.example.fp.model.FpAuthority;
 import com.example.fp.model.FpModel;
 import com.example.fp.model.FpModelQuery;
 
+import com.example.fp.monad.Monadic;
+import com.example.fp.monad.Witness;
+import com.example.fp.monad.Witness.responseM;
+import com.example.fp.monad.monad.ResponseM;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 
 public interface FpService extends Service<FpModel, FpModelQuery> {
     FpDB getFpDB();
@@ -18,25 +23,34 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
         return getFpDB().findAll().stream().filter(f).collect(Collectors.toList());
     }
 
-    default Optional<FpModelQuery> validate(final FpModelQuery query) {
-        return Optional.of(query);
+    default ResponseM<FpModelQuery> validate(final FpModelQuery query) {
+//        return ResponseM.of(query);
+        return ResponseM.failure(HttpStatus.BAD_REQUEST, "not valid field name xyz");
     }
 
     @Override
-    default Optional<List<FpModel>> findAll() {
-        return Optional.of(getFpDB().findAll());
+    default ResponseM<List<FpModel>> findAll() {
+        return ResponseM.of(getFpDB().findAll());
     }
 
     @Override
-    default Optional<FpModel> upsert(final FpModel model,
+    default ResponseM<FpModel> upsert(final FpModel model,
                                      final FpModelQuery query,
                                      final FpAuthority authority) {
-        final Function<FpModelQuery, Optional<FpModel>> aux = _query -> {
-            final Optional<FpModel> found = getFpDB().findOp(_query);
+
+//        final Function<FpModelQuery, Monadic<responseM, FpModel>> aux = _query -> {
+//            final ResponseM<FpModel> found = ResponseM.of(getFpDB().findOp(_query));
+//            return found.isPresent()
+//                    ? found.flatMap(_found -> ResponseM.of(getFpDB().updateOp(_found, _query)))
+//                    : ResponseM.of(getFpDB().insertOp(model));
+//        };
+
+        final Function <FpModelQuery, ResponseM<FpModel>> aux = _query -> {
+            final ResponseM<FpModel> found = ResponseM.of(getFpDB().findOp(_query));
             return found.isPresent()
-                    ? found.flatMap(_found -> getFpDB().updateOp(_found, _query))
-                    : getFpDB().insertOp(model);
+                ? found.flatMapR(_found -> ResponseM.of(getFpDB().updateOp(_found, _query)))
+                : ResponseM.of(getFpDB().insertOp(model));
         };
-        return validate(query).flatMap(aux);
+        return ResponseM.narrow(validate(query).flatMap(aux));
     }
 }

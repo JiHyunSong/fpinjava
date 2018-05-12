@@ -6,6 +6,7 @@ import com.example.fp.monad.Witness;
 import com.example.fp.monad.Witness.responseM;
 import com.example.fp.monad.adapter.Adapter;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,12 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
             : new ResponseFailure<>(HttpStatus.BAD_REQUEST, "");
     }
 
+    static <U> ResponseM<U> of(final Optional<U> value) {
+        return value
+            .map(ResponseM::of)
+            .orElse(failure());
+    }
+
     static <U> ResponseM<U> of(final U value, final HttpStatus status, final String message) {
         return value != null
             ? new ResponseSuccess<>(value)
@@ -52,6 +59,14 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
 
     static <U> ResponseM<U> failure(final HttpStatus status, final String message) {
         return new ResponseFailure<>(status, message);
+    }
+
+    static <R> ResponseM<R> narrow ( final Monadic<Witness.responseM, R> m) {
+        return (ResponseM<R>) m;
+    }
+
+    default <R> ResponseM<R> flatMapR(Function <? super T, ? extends ResponseM<? extends R>> f) {
+        return ResponseM.narrow(this.flatMap(f));
     }
 
     @Slf4j
@@ -90,11 +105,15 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
             }
         }
 
+//        private static <R> ResponseM<R> narrow(final Monadic<Witness.responseM, R> m) {
+//            return (ResponseM<R>) m;
+//        }
+
         @Override
-        public <R> Monadic<Witness.responseM, R> flatMap(
+        public <R> ResponseM<R> flatMap(
             Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
             try {
-                return Monadic.cast(f.apply(data));
+                return narrow(Monadic.cast(f.apply(data)));
             } catch (Exception e) {
                 return new ResponseFailure<>(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to execute flatMap function");
@@ -130,12 +149,12 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
         }
 
         @Override
-        public <R> Monadic<Witness.responseM, R> map(Function<? super T, ? extends R> f) {
+        public <R> ResponseM<R> map(Function<? super T, ? extends R> f) {
             return new ResponseFailure<>(status, message);
         }
 
         @Override
-        public <R> Monadic<Witness.responseM, R> flatMap(
+        public <R> ResponseM<R> flatMap(
             Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
             return new ResponseFailure<>(status, message);
         }
