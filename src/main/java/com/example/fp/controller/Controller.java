@@ -13,17 +13,9 @@ import java.util.Optional;
 public interface Controller<T, U> {
     Service<T, U> getService(final FpAuthority authority);
 
-    default <R> ResponseEntity<R> toResponseEntity(
-            final Optional<R> op,
-            final ResponseEntity<R> failure) {
-        return op.map(r -> new ResponseEntity<>(r, HttpStatus.OK)).orElse(failure);
-    }
-
     @RequestMapping("")
     default ResponseEntity<List<T>> getAll(final FpAuthority fpAuthority) {
-        return toResponseEntity(
-                getService(fpAuthority).findAll(),
-                new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return getService(fpAuthority).findAll().toResponseEntity();
     }
 
     @RequestMapping("")
@@ -31,8 +23,6 @@ public interface Controller<T, U> {
             @RequestBody final T model,
             @RequestParam final U query,
             final FpAuthority fpAuthority) {
-        return toResponseEntity(
-                getService(fpAuthority).upsert(model, query, fpAuthority),
-                new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return getService(fpAuthority).upsert(model, query, fpAuthority).toResponseEntity();
     }
 }

@@ -30,7 +30,7 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
             return ((ResponseFailure<T>) this).toResponsibleEntity();
         } else {
             // unreachable code
-            return new ResponseFailure<T>(HttpStatus.INTERNAL_SERVER_ERROR, "").toResponsibleEntity()
+            return new ResponseFailure<T>(HttpStatus.INTERNAL_SERVER_ERROR, "").toResponsibleEntity();
         }
     }
 
@@ -94,7 +94,7 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
         public <R> Monadic<Witness.responseM, R> flatMap(
             Function<? super T, ? extends Monadic<Witness.responseM, ? extends R>> f) {
             try {
-                return Monadic.cast(f.apply(data))
+                return Monadic.cast(f.apply(data));
             } catch (Exception e) {
                 return new ResponseFailure<>(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to execute flatMap function");
@@ -122,7 +122,7 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
         public boolean equalsM(Monadic<Witness.responseM, ? extends T> other) {
             return false;
         }
-]
+
 
         @Override
         public boolean isPresent() {
