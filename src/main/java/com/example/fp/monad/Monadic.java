@@ -10,19 +10,19 @@ import java.util.function.Supplier;
 
 public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
     boolean isPresent();
-    <R> Monadic<W, R> map(final Function<? super T, ? extends R> f);
-    <R> Monadic<W, R> flatMap(final Function<? super T, ? extends Monadic<W, ? extends R>> f);
+    <R> Monadic<W, R> mapM(final Function<? super T, ? extends R> f);
+    <R> Monadic<W, R> flatMapM(final Function<? super T, ? extends Monadic<W, ? extends R>> f);
     // TODO, have to find appropriate way to avoid this kind of casting
     static <W extends WitnessType<W>, R> Monadic<W, R> cast(final Monadic<W, ? extends R> m) {
-        return m.map(id -> id);
+        return m.mapM(id -> id);
     }
 
 
     /*
      * Filterable
      */
-    default Monadic<W, T> filter(final Predicate<? super T> cond, final Monadic<W, ? extends T> other) {
-        return flatMap(t -> {
+    default Monadic<W, T> filterM(final Predicate<? super T> cond, final Monadic<W, ? extends T> other) {
+        return flatMapM(t -> {
             try {
                 if (cond.test(t)) {
                     return this;
@@ -40,37 +40,22 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
     }
 
     default Monadic<W, T> filter(final Predicate<? super T> cond) {
-        return filter(cond, adapter().empty());
+        return filterM(cond, adapter().empty());
     }
 
 
     /*
      * Recoverable
      */
-    default Monadic<W, T> orElse(final T other) {
-        return isPresent() ? this : adapter().unit(other);
+    default Monadic<W, T> orElseM(final Monadic<W, ? extends T> other) {
+        return isPresent() ? this : Monadic.cast(other);
     }
-    default Monadic<W, T> orElse(final Monadic<W, T> other) {
-        return isPresent() ? this : other;
-    }
-    default Monadic<W, T> orElse(final Supplier<? extends T> other) {
+    default Monadic<W, T> orElseGetM(final Supplier<Monadic<W, ? extends T>> other) {
         if (isPresent()) {
             return this;
         } else {
             try {
-                return adapter().unit(other.get());
-            } catch (Exception e) {
-                LogHelper.logger(Monadic.class).error("Failed to run orElseGet, supplier has been failed, ", e);
-                return adapter().empty();
-            }
-        }
-    }
-    default Monadic<W, T> orElseM(final Supplier<Monadic<W, T>> other) {
-        if (isPresent()) {
-            return this;
-        } else {
-            try {
-                return other.get();
+                return Monadic.cast(other.get());
             } catch (Exception e) {
                 LogHelper.logger(Monadic.class).error("Failed to run orElseGet, supplier has been failed, ", e);
                 return adapter().empty();
@@ -105,7 +90,7 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
     }
 
     default Monadic<W, T> peek(final boolean tf, final Consumer<T> t, final Consumer<T> f) {
-        return flatMap(v -> {
+        return flatMapM(v -> {
             try {
                 if (tf) {
                     t.accept(v);
