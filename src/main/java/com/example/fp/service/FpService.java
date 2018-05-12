@@ -31,14 +31,12 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
     default Optional<FpModel> upsert(final FpModel model,
                                      final FpModelQuery query,
                                      final FpAuthority authority) {
-
         final Function<FpModelQuery, Optional<FpModel>> aux = _query -> {
             final Optional<FpModel> found = getFpDB().findOp(_query);
             return found.isPresent()
                     ? found.flatMap(_found -> getFpDB().updateOp(_found, _query))
                     : getFpDB().insertOp(model);
         };
-
         return validate(query).flatMap(aux);
     }
 }

@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service(FpServiceByRole.IDENTIFIER)
 public final class FpServiceByRole implements FpService {
@@ -27,14 +29,14 @@ public final class FpServiceByRole implements FpService {
     }
 
     @Override
-    public FpModel upsert(final FpModel model,
-                          final FpModelQuery query,
-                          final FpAuthority authority) {
+    public Optional<FpModel> upsert(final FpModel model,
+                                    final FpModelQuery query,
+                                    final FpAuthority authority) {
         if (isValidQuery(query, authority)) {
             return FpService.super.upsert(model, query, authority);
         } else {
             log.error("Invalid request by user");
-            return null;
+            return Optional.empty();
         }
     }
 }

@@ -9,8 +9,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
-    Monadic<W, T> unit(final T v);
-    Monadic<W, T> empty();
     boolean isPresent();
     <R> Monadic<W, R> map(final Function<? super T, ? extends R> f);
     <R> Monadic<W, R> flatMap(final Function<? super T, ? extends Monadic<W, ? extends R>> f);
@@ -32,17 +30,17 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
                     return other;
                 } else {
                     LogHelper.logger(Monadic.class).warn("Failed to return other case, the other object is null");
-                    return empty();
+                    return adapter().empty();
                 }
             } catch (Exception e) {
                 LogHelper.logger(Monadic.class).error("Failed to execute a condition predicate, ", e);
-                return empty();
+                return adapter().empty();
             }
         });
     }
 
     default Monadic<W, T> filter(final Predicate<? super T> cond) {
-        return filter(cond, empty());
+        return filter(cond, adapter().empty());
     }
 
 
@@ -50,7 +48,7 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
      * Recoverable
      */
     default Monadic<W, T> orElse(final T other) {
-        return isPresent() ? this : unit(other);
+        return isPresent() ? this : adapter().unit(other);
     }
     default Monadic<W, T> orElse(final Monadic<W, T> other) {
         return isPresent() ? this : other;
@@ -60,10 +58,10 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
             return this;
         } else {
             try {
-                return unit(other.get());
+                return adapter().unit(other.get());
             } catch (Exception e) {
                 LogHelper.logger(Monadic.class).error("Failed to run orElseGet, supplier has been failed, ", e);
-                return empty();
+                return adapter().empty();
             }
         }
     }
@@ -75,7 +73,7 @@ public interface Monadic<W extends WitnessType<W>, T> extends WitnessType<W> {
                 return other.get();
             } catch (Exception e) {
                 LogHelper.logger(Monadic.class).error("Failed to run orElseGet, supplier has been failed, ", e);
-                return empty();
+                return adapter().empty();
             }
         }
     }

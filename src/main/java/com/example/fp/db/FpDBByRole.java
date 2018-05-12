@@ -17,17 +17,17 @@ public class FpDBByRole implements FpDB {
     }
 
     @Override
-    public boolean insert(FpModel value) {
-        return false;
+    public FpModel insert(FpModel value) {
+        return null;
     }
 
     @Override
-    public boolean update(FpModel value, FpModelQuery query) {
-        return false;
+    public FpModel update(FpModel value, FpModelQuery query) {
+        return null;
     }
 
     @Override
-    public boolean delete(FpModelQuery query) {
-        return false;
+    public FpModel delete(FpModelQuery query) {
+        return null;
     }
 }
