@@ -7,6 +7,7 @@ import com.example.fp.model.FpModelQuery;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -17,8 +18,8 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
         return getFpDB().findAll().stream().filter(f).collect(Collectors.toList());
     }
 
-    default Boolean validate(final FpModel model) {
-        return true;
+    default Optional<FpModelQuery> validate(final FpModelQuery query) {
+        return Optional.of(query);
     }
 
     @Override
@@ -30,29 +31,14 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
     default Optional<FpModel> upsert(final FpModel model,
                                      final FpModelQuery query,
                                      final FpAuthority authority) {
-        if (!validate(model)) {
-            return Optional.empty();
-        }
 
-        Optional<FpModel> op = getFpDB().findOp(query);
-        op
-                .flatMap(found -> getFpDB().updateOp(found, query).map(result -> found))
-                .orElseGet(() -> { getFpDB().insert(model); return model; });
+        final Function<FpModelQuery, Optional<FpModel>> aux = _query -> {
+            final Optional<FpModel> found = getFpDB().findOp(_query);
+            return found.isPresent()
+                    ? found.flatMap(_found -> getFpDB().updateOp(_found, _query))
+                    : getFpDB().insertOp(model);
+        };
 
-        // 있다면
-        // getFpDB().update(model, query);
-        // 없다면
-        // getFpDB().insert(model);
-        try {
-            final FpModel found = getFpDB().find(query);
-            if (found == null ) {
-                getFpDB().insert(model);
-            } else {
-                getFpDB().update(model, query);
-            }
-            return Optional.of(model);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return validate(query).flatMap(aux);
     }
 }
