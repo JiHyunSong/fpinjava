@@ -17,8 +17,8 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
         return getFpDB().findAll().stream().filter(f).collect(Collectors.toList());
     }
 
-    default Boolean validate(final FpModel model) {
-        return true;
+    default Optional<FpModelQuery> validate(final FpModelQuery query) {
+        return Optional.of(query);
     }
 
     @Override
@@ -30,29 +30,11 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
     default Optional<FpModel> upsert(final FpModel model,
                                      final FpModelQuery query,
                                      final FpAuthority authority) {
-        if (!validate(model)) {
-            return Optional.empty();
-        }
 
-        Optional<FpModel> op = getFpDB().findOp(query);
-        op
-                .flatMap(found -> getFpDB().updateOp(found, query).map(result -> found))
-                .orElseGet(() -> { getFpDB().insert(model); return model; });
+        Optional<FpModel> op = validate(query)
+            .flatMap(_query -> getFpDB().findOp(_query))
+            .flatMap(found -> getFpDB().updateOp(found, query));
+        return Optional.of(op.orElse(getFpDB().insert(model)));
 
-        // 있다면
-        // getFpDB().update(model, query);
-        // 없다면
-        // getFpDB().insert(model);
-        try {
-            final FpModel found = getFpDB().find(query);
-            if (found == null ) {
-                getFpDB().insert(model);
-            } else {
-                getFpDB().update(model, query);
-            }
-            return Optional.of(model);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
     }
 }
