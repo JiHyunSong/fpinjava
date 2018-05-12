@@ -3,6 +3,9 @@ package com.example.fp.monad.monad;
 import com.example.fp.monad.AnyM;
 import com.example.fp.monad.Monadic;
 import com.example.fp.monad.Witness;
+import com.example.fp.monad.Witness.responseM;
+import com.example.fp.monad.adapter.Adapter;
+import java.util.NoSuchElementException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,13 +13,19 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.function.Function;
 
 public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
+    @Override
+    default Adapter<responseM> adapter() {
+        return responseM.INSTANCE.adapter();
+    }
 
     @Slf4j
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     final class ResponseSuccess<T> implements ResponseM<T> {
+        private final T data;
+
         @Override
         public T get() {
-            return null;
+            return data;
         }
 
         @Override
@@ -24,19 +33,10 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
             return false;
         }
 
-        @Override
-        public Monadic<Witness.responseM, T> unit(T v) {
-            return null;
-        }
-
-        @Override
-        public Monadic<Witness.responseM, T> empty() {
-            return null;
-        }
 
         @Override
         public boolean isPresent() {
-            return false;
+            return true;
         }
 
         @Override
@@ -55,23 +55,14 @@ public interface ResponseM<T> extends AnyM<Witness.responseM, T> {
     final class ResponseFailure<T> implements ResponseM<T> {
         @Override
         public T get() {
-            return null;
+            throw new NoSuchElementException();
         }
 
         @Override
         public boolean equalsM(Monadic<Witness.responseM, ? extends T> other) {
             return false;
         }
-
-        @Override
-        public Monadic<Witness.responseM, T> unit(T v) {
-            return null;
-        }
-
-        @Override
-        public Monadic<Witness.responseM, T> empty() {
-            return null;
-        }
+]
 
         @Override
         public boolean isPresent() {
