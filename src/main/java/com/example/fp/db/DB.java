@@ -8,9 +8,9 @@ import java.util.Optional;
 public interface DB<T, U> {
     List<T> findAll();
     T find(final U query);
-    boolean insert(final T value);
-    boolean update(final T value, final U query);
-    boolean delete(final U query);
+    T insert(final T value);
+    T update(final T value, final U query);
+    T delete(final U query);
 
     default Optional<List<T>> findAllOp() {
         try {
@@ -35,27 +35,30 @@ public interface DB<T, U> {
         }
     }
 
-    default Optional<Boolean> insertOp(final T value) {
+    default Optional<T> insertOp(final T value) {
         try {
-            return Optional.of(insert(value));
+            final T result = insert(value);
+            return result != null ? Optional.of(result) : Optional.empty();
         } catch (Exception e) {
             LogHelper.logger(DB.class).info("Failed to execute find all, ", e);
             return Optional.empty();
         }
     }
 
-    default Optional<Boolean> updateOp(final T value, final U query) {
+    default Optional<T> updateOp(final T value, final U query) {
         try {
-            return Optional.of(update(value, query));
+            final T result = update(value, query);
+            return result != null ? Optional.of(result) : Optional.empty();
         } catch (Exception e) {
             LogHelper.logger(DB.class).info("Failed to execute find all, ", e);
             return Optional.empty();
         }
     }
 
-    default Optional<Boolean> deleteOp(final U query) {
+    default Optional<T> deleteOp(final U query) {
         try {
-            return Optional.of(delete(query));
+            final T result = delete(query);
+            return result != null ? Optional.of(result) : Optional.empty();
         } catch (Exception e) {
             LogHelper.logger(DB.class).info("Failed to execute find all, ", e);
             return Optional.empty();
