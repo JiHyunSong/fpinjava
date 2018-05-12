@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 public interface Controller<T, U> {
+
     // 여길 optional로 하면 null pointer exception을 안뱉는다.
     Service<T, U> getService(final FpAuthority authority);
 
@@ -24,19 +25,16 @@ public interface Controller<T, U> {
 
     @RequestMapping("")
     default ResponseEntity<List<T>> getAll(final FpAuthority fpAuthority) {
-        return getService(fpAuthority).findAll()
-            .map(found -> new ResponseEntity<>(found, HttpStatus.OK))
-            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return toResponseEntity(getService(fpAuthority).findAll(),
+            new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping("")
     default ResponseEntity<T> upsert(
-            @RequestBody final T model,
-            @RequestParam final U query,
-            final FpAuthority fpAuthority) {
-        return getService(fpAuthority)
-            .upsert(model, query, fpAuthority)
-            .map(_model -> new ResponseEntity<>(_model, HttpStatus.OK))
-            .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        @RequestBody final T model,
+        @RequestParam final U query,
+        final FpAuthority fpAuthority) {
+        return toResponseEntity(getService(fpAuthority)
+            .upsert(model, query, fpAuthority), new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

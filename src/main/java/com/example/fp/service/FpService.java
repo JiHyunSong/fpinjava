@@ -7,6 +7,7 @@ import com.example.fp.model.FpModelQuery;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -23,12 +24,12 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
     }
 
     @Override
-    default Optional<List<FpModel>> findAll() {
-        return Optional.of(getFpDB().findAll());
+    default CompletableFuture<Optional<List<FpModel>>> findAll() {
+        return CompletableFuture.completedFuture(Optional.of(getFpDB().findAll()));
     }
 
     @Override
-    default Optional<FpModel> upsert(final FpModel model,
+    default CompletableFuture<Optional<FpModel>> upsert(final FpModel model,
                                      final FpModelQuery query,
                                      final FpAuthority authority) {
 
@@ -39,7 +40,7 @@ public interface FpService extends Service<FpModel, FpModelQuery> {
                     : getFpDB().insertOp(model);
         };
 
-        return validate(query).flatMap(aux);
+        return CompletableFuture.completedFuture(validate(query).flatMap(aux));
 
     }
 }
